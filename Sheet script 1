@@ -1,0 +1,47 @@
+function processNewResponses(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var masterSheet = ss.getSheetByName("Master Sheet");
+  var form9Sheet = ss.getSheetByName("Form 9 Data");
+
+  // Retrieve all form sheets
+  var formSheets = [];
+  for (var i = 1; i <= 8; i++) {
+    formSheets.push(ss.getSheetByName("Form " + i + " Data"));
+  }
+
+  // Get the last processed timestamp from the Master Sheet
+  var lastRow = masterSheet.getLastRow();
+  var lastProcessedTimestamp = lastRow > 1 ? new Date(masterSheet.getRange(lastRow, 1).getValue()) : new Date(0);
+
+  // Get new responses from Form 9 Data
+  var form9Data = form9Sheet.getDataRange().getValues();
+  var newForm9Data = form9Data.filter(row => new Date(row[0]) > lastProcessedTimestamp);
+
+  // Process each new Form 9 response
+  newForm9Data.forEach(row => {
+    var timestamp = new Date(row[0]);
+    var customerDetails = row.slice(1, 6);
+
+    // Find corresponding entries in the other form sheets
+    var relatedEntries = [];
+    formSheets.forEach(sheet => {
+      var sheetData = sheet.getDataRange().getValues();
+      var matchingEntries = sheetData.filter(entry => {
+        var entryTimestamp = new Date(entry[0]);
+        return entryTimestamp > lastProcessedTimestamp && entryTimestamp <= timestamp;
+      });
+      relatedEntries = relatedEntries.concat(matchingEntries);
+    });
+
+    // Append the related entries to the Master Sheet
+    relatedEntries.forEach(entry => {
+      // Check if the entry already exists in the Master Sheet
+      var existingEntries = masterSheet.getDataRange().getValues().map(row => row.join());
+      var newEntry = [entry[0], customerDetails[0], customerDetails[1], customerDetails[2], customerDetails[3], customerDetails[4], entry[1], entry[2], entry[3], entry[4], entry[5]].join();
+
+      if (!existingEntries.includes(newEntry)) {
+        masterSheet.appendRow([entry[0], customerDetails[0], customerDetails[1], customerDetails[2], customerDetails[3], customerDetails[4], entry[1], entry[2], entry[3], entry[4], entry[5]]);
+      }
+    });
+  });
+}
