@@ -1,3 +1,10 @@
+function setup() {
+  ScriptApp.newTrigger("processNewResponses")
+    .forSpreadsheet(SpreadsheetApp.getActiveSpreadsheet())
+    .onFormSubmit()
+    .create();
+}
+
 function processNewResponses(e) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var masterSheet = ss.getSheetByName("Master Sheet");
@@ -44,4 +51,10 @@ function processNewResponses(e) {
       }
     });
   });
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Script')
+      .addItem('Setup Trigger', 'setup')
+      .addToUi();
 }
